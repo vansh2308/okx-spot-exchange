@@ -70,6 +70,7 @@ bool WebSocketClient::connect() {
         ws_->handshake(host_, path_);
         std::cout << "[Connected] WebSocket handshake completed.\n";
         connected_ = true;
+        emit connectionStatusChanged(true);
 
         // Start async read
         do_read();
@@ -81,6 +82,7 @@ bool WebSocketClient::connect() {
             } catch (const std::exception& e) {
                 core::Logger::getInstance().error("WebSocket I/O error: {}", e.what());
                 connected_ = false;
+                emit connectionStatusChanged(false);
             }
         }).detach();
 
@@ -89,6 +91,7 @@ bool WebSocketClient::connect() {
     } catch (const std::exception& e) {
         core::Logger::getInstance().error("WebSocket connection failed: {}", e.what());
         connected_ = false;
+        emit connectionStatusChanged(false);
         return false;
     }
 }
@@ -104,6 +107,7 @@ void WebSocketClient::do_read() {
             if (ec) {
                 core::Logger::getInstance().error("WebSocket read error: {}", ec.message());
                 connected_ = false;
+                emit connectionStatusChanged(false);
                 return;
             }
 
@@ -123,7 +127,7 @@ void WebSocketClient::disconnect() {
         } catch (...) {
         }
         connected_ = false;
-        // emit connectionStateChanged(false);
+        emit connectionStatusChanged(false);
     }
 }
 

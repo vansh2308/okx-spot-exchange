@@ -3,6 +3,7 @@
 #include <memory>
 #include <string>
 #include <functional>
+#include <QObject>
 #include <boost/beast/core.hpp>
 #include <boost/beast/websocket.hpp>
 #include <boost/asio/connect.hpp>
@@ -14,7 +15,6 @@
 #include "core/config.h"
 #include "websocket/message_processor.h"
 
-
 namespace websocket {
 
 namespace beast = boost::beast;
@@ -23,8 +23,8 @@ namespace net = boost::asio;
 namespace ssl = net::ssl;
 using tcp = net::ip::tcp;
 
-class WebSocketClient {
-    // Q_OBJECT
+class WebSocketClient : public QObject {
+    Q_OBJECT
 
 public:
     explicit WebSocketClient(std::shared_ptr<core::Config> config, std::shared_ptr<processing::MessageProcessor> msgProcessor);
@@ -36,8 +36,8 @@ public:
     bool send(const std::string& message);
     void setMessageHandler(std::function<void(const std::string&)> handler);
 
-// signals:
-//     void connectionStateChanged(bool connected);
+signals:
+    void connectionStatusChanged(bool connected);
 
 private:
     void do_read();
