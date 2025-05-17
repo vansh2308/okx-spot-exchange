@@ -1,5 +1,6 @@
-
 #include "websocket/websocket_client.h"
+#include "websocket/message_processor.h"
+
 #include "core/logger.h"
 #include <boost/beast/core.hpp>
 #include <boost/beast/websocket.hpp>
@@ -9,6 +10,7 @@
 #include <boost/asio/ssl/error.hpp>
 #include <boost/asio/ssl/stream.hpp>
 #include <iostream>
+#include <thread>
 
 namespace websocket {
 
@@ -18,8 +20,8 @@ namespace net = boost::asio;
 namespace ssl = net::ssl;
 using tcp = net::ip::tcp;
 
-WebSocketClient::WebSocketClient(std::shared_ptr<core::Config> config)
-    : config_(config), connected_(false)
+WebSocketClient::WebSocketClient(std::shared_ptr<core::Config> config, std::shared_ptr<processing::MessageProcessor> msgProcessor)
+    : config_(config), connected_(false), processor_(msgProcessor)
 {
     // Parse WebSocket URL from config
     std::string url = config_->getWebSocketEndpoint();
@@ -67,22 +69,51 @@ bool WebSocketClient::connect() {
         // Perform WebSocket handshake
         ws_->handshake(host_, path_);
         std::cout << "[Connected] WebSocket handshake completed.\n";
+        connected_ = true;
 
-        for (;;) {
-            beast::flat_buffer buffer;
-            ws_->read(buffer);
+        // Start async read
+        do_read();
 
-            std::cout << "[Received] " << beast::make_printable(buffer.data()) << "\n";
-        }
+        // Run the I/O service in a separate thread
+        std::thread([this]() {
+            try {
+                ioc_->run();
+            } catch (const std::exception& e) {
+                core::Logger::getInstance().error("WebSocket I/O error: {}", e.what());
+                connected_ = false;
+            }
+        }).detach();
 
         return true;
 
     } catch (const std::exception& e) {
         core::Logger::getInstance().error("WebSocket connection failed: {}", e.what());
         connected_ = false;
-        // emit connectionStateChanged(false);
         return false;
     }
+}
+
+void WebSocketClient::do_read() {
+    if (!ws_ || !connected_) {
+        return;
+    }
+
+    ws_->async_read(
+        buffer_,
+        [this](beast::error_code ec, std::size_t bytes_transferred) {
+            if (ec) {
+                core::Logger::getInstance().error("WebSocket read error: {}", ec.message());
+                connected_ = false;
+                return;
+            }
+
+            auto data = beast::buffers_to_string(buffer_.data());
+            processor_->enqueue(data);
+            buffer_.consume(buffer_.size());
+
+            // Continue reading
+            do_read();
+        });
 }
 
 void WebSocketClient::disconnect() {

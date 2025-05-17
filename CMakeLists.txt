@@ -29,6 +29,7 @@ include_directories(
     ${Boost_INCLUDE_DIRS}
     ${OPENSSL_INCLUDE_DIR}
     ${FMT_INCLUDE_DIRS}
+    ${CMAKE_SOURCE_DIR}/third_party/concurrentqueue  # For concurrentqueue
     # ${Qt6Core_INCLUDE_DIRS}
     # ${Qt6Widgets_INCLUDE_DIRS}
     # ${Qt6Network_INCLUDE_DIRS}

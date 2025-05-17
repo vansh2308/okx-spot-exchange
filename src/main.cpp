@@ -2,10 +2,13 @@
 
 #include <memory>
 #include <iostream>
+#include <thread>
+#include <chrono>
 
 #include "core/logger.h"
 #include "core/config.h"
 #include "websocket/websocket_client.h"
+#include "websocket/message_processor.h"
 
 int main(int argc, char* argv[]){
     try {
@@ -24,12 +27,22 @@ int main(int argc, char* argv[]){
         }
 
         // WIP: Make websocket 
-        auto wsClient = std::make_shared<websocket::WebSocketClient>(config);
+        auto msgProcessor = std::make_shared<processing::MessageProcessor>();
+        auto wsClient = std::make_shared<websocket::WebSocketClient>(config, msgProcessor);
+
         bool connected = wsClient->connect();
         if (!connected) {
             logger.error("Failed to connect to WebSocket server");
+            return 1;
         }
-        
+
+        while (wsClient->isConnected()) {
+            processing::WebSocketMessage message = msgProcessor->dequeue();
+            if (!message.data.empty()) {
+                std::cout << "[Received] " << message.data << std::endl;
+            }
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));  // Small sleep to prevent busy-waiting
+        }
         
     } catch(const std::exception& e) {
         std::cerr << "Unhandled exception: " << e.what() << std::endl;

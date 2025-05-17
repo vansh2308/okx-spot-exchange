@@ -12,6 +12,7 @@
 #include <boost/asio/ssl/stream.hpp>
 
 #include "core/config.h"
+#include "websocket/message_processor.h"
 
 
 namespace websocket {
@@ -26,7 +27,7 @@ class WebSocketClient {
     // Q_OBJECT
 
 public:
-    explicit WebSocketClient(std::shared_ptr<core::Config> config);
+    explicit WebSocketClient(std::shared_ptr<core::Config> config, std::shared_ptr<processing::MessageProcessor> msgProcessor);
     ~WebSocketClient();
 
     bool connect();
@@ -39,15 +40,19 @@ public:
 //     void connectionStateChanged(bool connected);
 
 private:
+    void do_read();
+
     std::shared_ptr<core::Config> config_;
     std::unique_ptr<net::io_context> ioc_;
     std::unique_ptr<websocket::stream<beast::ssl_stream<tcp::socket>>> ws_;
     std::unique_ptr<ssl::context> ctx_;
+    std::shared_ptr<processing::MessageProcessor> processor_;
     std::function<void(const std::string&)> messageHandler_;
     bool connected_;
     std::string host_;
     std::string port_;
     std::string path_;
+    beast::flat_buffer buffer_;
 };
 
 }
