@@ -13,7 +13,7 @@ if(APPLE)
 endif()
 
 # Find Qt packages
-# find_package(Qt6 COMPONENTS Core Widgets Network Charts REQUIRED)
+# find_package(Qt5 COMPONENTS Core Widgets Network Charts REQUIRED)
 
 
 # Find other dependencies
