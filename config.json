@@ -1,0 +1,43 @@
+{
+    "websocket": {
+      "endpoint": "wss://ws.gomarket-cpp.goquant.io/ws/l2-orderbook/okx/BTC-USDT-SWAP",
+      "reconnect_interval_ms": 5000,
+      "ping_interval_ms": 30000
+    },
+    "exchanges": [
+      {
+        "name": "OKX",
+        "fee_tiers": [
+          {"tier": "VIP 0", "maker": 0.0008, "taker": 0.001},
+          {"tier": "VIP 1", "maker": 0.0006, "taker": 0.0008},
+          {"tier": "VIP 2", "maker": 0.0004, "taker": 0.0007},
+          {"tier": "VIP 3", "maker": 0.0002, "taker": 0.0006},
+          {"tier": "VIP 4", "maker": 0.0000, "taker": 0.0005},
+          {"tier": "VIP 5", "maker": -0.0001, "taker": 0.0003}
+        ],
+        "spot_assets": ["BTC-USDT", "ETH-USDT", "SOL-USDT", "XRP-USDT", "BNB-USDT"]
+      }
+    ],
+    "simulator": {
+      "default_quantity_usd": 100,
+      "default_volatility": 0.3,
+      "default_fee_tier": "VIP 0",
+      "default_exchange": "OKX",
+      "default_asset": "BTC-USDT",
+      "default_order_type": "market",
+      "update_interval_ms": 100
+    },
+    "logging": {
+      "level": "info",
+      "console_output": true,
+      "file_output": true,
+      "file_path": "logs/simulator.log",
+      "max_file_size_mb": 10,
+      "max_files": 5
+    },
+    "performance": {
+      "measure_latency": true,
+      "buffer_size": 1000,
+      "processing_threads": 2
+    }
+  } 
