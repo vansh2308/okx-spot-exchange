@@ -30,7 +30,6 @@ bool MessageProcessor::enqueue(const std::string& message) {
 WebSocketMessage MessageProcessor::dequeue() {
     WebSocketMessage msg;
     queue_.try_dequeue(msg);
-    std::cout << msg.data << std::endl;
     return msg;
 }   
 
