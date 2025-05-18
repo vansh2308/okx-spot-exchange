@@ -6,15 +6,17 @@
 #include <QVBoxLayout>
 #include <QLabel>
 #include "ui/orderbook_table_model.h"
+#include "ui/simulation_panel.h"
 #include "core/orderbook.h"
 
 namespace ui {
 
-class OrderBookView : public QWidget {
+class View : public QWidget {
     Q_OBJECT
 
 public:
-    explicit OrderBookView(QWidget* parent = nullptr);
+    explicit View(QWidget* parent = nullptr);
+    SimulationPanel* getSimulationPanel() const { return simulationPanel_; }
 
 public slots:
     void updateOrderBook(const std::vector<core::OrderBookLevel>& bids, 
@@ -29,6 +31,7 @@ private:
     ui::OrderBookTableModel* askModel_;
     QLabel* lastUpdateLabel_;
     QLabel* spreadLabel_;
+    SimulationPanel* simulationPanel_;
     QVBoxLayout* mainLayout_;
 };
 

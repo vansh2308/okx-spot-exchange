@@ -36,7 +36,7 @@ QVariant OrderBookTableModel::data(const QModelIndex& index, int role) const {
     } else if (role == Qt::TextAlignmentRole) {
         return int(Qt::AlignRight | Qt::AlignVCenter);
     } else if (role == Qt::BackgroundRole) {
-        return QBrush(index.row() % 2 == 0 ? QColor(240, 240, 240) : QColor(255, 255, 255));
+        return QBrush(index.row() % 2 == 0 ? QColor(0, 0, 0) : QColor(0, 0, 0));
     }
 
     return QVariant();

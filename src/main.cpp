@@ -7,8 +7,8 @@
 #include <nlohmann/json.hpp>
 
 #include <QApplication>
-#include "ui/orderbook_view.h"
-#include "ui/orderbook_bridge.h"
+#include "ui/view.h"
+#include "ui/bridge.h"
 
 #include "core/logger.h"
 #include "core/config.h"
@@ -37,8 +37,7 @@ int main(int argc, char* argv[]){
         auto orderBook = std::make_shared<core::OrderBook>();
         auto simulator = std::make_shared<models::Simulator>(config);
         simulator->init();
-
-        // WIP: Make websocket 
+ 
         auto msgProcessor = std::make_shared<processing::MessageProcessor>();
         auto wsClient = std::make_shared<websocket::WebSocketClient>(config, msgProcessor);
         bool connected = wsClient->connect();
@@ -89,9 +88,10 @@ int main(int argc, char* argv[]){
         //     std::this_thread::sleep_for(std::chrono::milliseconds(10));  // Small sleep to prevent busy-waiting
         // }
 
-        ui::OrderBookView view;
-        ui::OrderBookBridge bridge(msgProcessor);
-        QObject::connect(&bridge, &ui::OrderBookBridge::orderBookUpdated, &view, &ui::OrderBookView::updateOrderBook);
+        ui::View view;
+        ui::Bridge bridge(msgProcessor, simulator);
+        QObject::connect(&bridge, &ui::Bridge::orderBookUpdated, &view, &ui::View::updateOrderBook);
+        QObject::connect(&bridge, &ui::Bridge::simulationUpdated, view.getSimulationPanel(), &ui::SimulationPanel::updateResults);
 
         view.resize(800, 600);
         view.show();

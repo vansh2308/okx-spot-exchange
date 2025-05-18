@@ -2,16 +2,19 @@ set(UI_SOURCES
     # main_window.cpp
     # orderbook_widget.cpp
     orderbook_table_model.cpp 
-    orderbook_view.cpp
-    orderbook_bridge.cpp
+    view.cpp
+    bridge.cpp
+    simulation_panel.cpp
 )
 
 set(UI_HEADERS
     # ${CMAKE_SOURCE_DIR}/include/ui/main_window.h
     # ${CMAKE_SOURCE_DIR}/include/ui/orderbook_widget.h
     ${CMAKE_SOURCE_DIR}/include/ui/orderbook_table_model.h
-    ${CMAKE_SOURCE_DIR}/include/ui/orderbook_view.h
-    ${CMAKE_SOURCE_DIR}/include/ui/orderbook_bridge.h
+    ${CMAKE_SOURCE_DIR}/include/ui/view.h
+    ${CMAKE_SOURCE_DIR}/include/ui/bridge.h
+    ${CMAKE_SOURCE_DIR}/include/ui/simulation_panel.h
+
 )
 
 add_library(ui STATIC ${UI_SOURCES} ${UI_HEADERS})

@@ -1,5 +1,5 @@
-// orderbook_view.cpp
-#include "ui/orderbook_view.h"
+// view.cpp
+#include "ui/view.h"
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QHeaderView>
@@ -8,13 +8,12 @@
 
 namespace ui {
 
-OrderBookView::OrderBookView(QWidget* parent)
-    : QWidget(parent)
-{
+View::View(QWidget* parent)
+    : QWidget(parent) {
     setupUI();
 }
 
-void OrderBookView::setupUI() {
+void View::setupUI() {
     // Create main layout
     mainLayout_ = new QVBoxLayout(this);
 
@@ -23,6 +22,13 @@ void OrderBookView::setupUI() {
     spreadLabel_ = new QLabel("Spread: -");
     mainLayout_->addWidget(lastUpdateLabel_);
     mainLayout_->addWidget(spreadLabel_);
+
+    // Create horizontal layout for order book and simulation panel
+    auto* horizontalLayout = new QHBoxLayout();
+
+    // Create order book group
+    auto* orderBookGroup = new QGroupBox("Order Book", this);
+    auto* orderBookLayout = new QVBoxLayout(orderBookGroup);
 
     // Create tables
     bidTable_ = new QTableView(this);
@@ -49,15 +55,25 @@ void OrderBookView::setupUI() {
     askTable_->setSelectionBehavior(QAbstractItemView::SelectRows);
     askTable_->setEditTriggers(QAbstractItemView::NoEditTriggers);
 
-    // Add tables to layout
-    mainLayout_->addWidget(bidTable_);
-    mainLayout_->addWidget(askTable_);
+    // Add tables to order book layout
+    orderBookLayout->addWidget(bidTable_);
+    orderBookLayout->addWidget(askTable_);
+
+    // Create simulation panel
+    simulationPanel_ = new SimulationPanel(this);
+
+    // Add widgets to horizontal layout
+    horizontalLayout->addWidget(orderBookGroup, 2);  // Order book takes 2/3 of the space
+    horizontalLayout->addWidget(simulationPanel_, 1);  // Simulation panel takes 1/3 of the space
+
+    // Add horizontal layout to main layout
+    mainLayout_->addLayout(horizontalLayout);
 
     setLayout(mainLayout_);
 }
 
-void OrderBookView::updateOrderBook(const std::vector<core::OrderBookLevel>& bids,
-                                  const std::vector<core::OrderBookLevel>& asks) {
+void View::updateOrderBook(const std::vector<core::OrderBookLevel>& bids,
+                          const std::vector<core::OrderBookLevel>& asks) {
     // Update models
     bidModel_->updateData(bids);
     askModel_->updateData(asks);

@@ -1,32 +1,36 @@
-#include "ui/orderbook_bridge.h"
+#include "ui/bridge.h"
 #include "core/logger.h"
 #include <nlohmann/json.hpp>
 
 namespace ui {
 
-OrderBookBridge::OrderBookBridge(std::shared_ptr<processing::MessageProcessor> processor, QObject* parent)
+Bridge::Bridge(std::shared_ptr<processing::MessageProcessor> processor,
+               std::shared_ptr<models::Simulator> simulator,
+               QObject* parent)
     : QObject(parent)
     , processor_(processor)
+    , simulator_(simulator)
+    , orderBook_(std::make_shared<core::OrderBook>())
     , timer_(new QTimer(this))
     , logger_(core::Logger::getInstance())
 {
-    connect(timer_, &QTimer::timeout, this, &OrderBookBridge::processMessage);
+    connect(timer_, &QTimer::timeout, this, &Bridge::processMessage);
     timer_->setInterval(100); // Process messages every 100ms
 }
 
-OrderBookBridge::~OrderBookBridge() {
+Bridge::~Bridge() {
     stop();
 }
 
-void OrderBookBridge::start() {
+void Bridge::start() {
     timer_->start();
 }
 
-void OrderBookBridge::stop() {
+void Bridge::stop() {
     timer_->stop();
 }
 
-void OrderBookBridge::processMessage() {
+void Bridge::processMessage() {
     processing::WebSocketMessage message = processor_->dequeue();
     if (!message.data.empty()) {
         try {
@@ -35,6 +39,7 @@ void OrderBookBridge::processMessage() {
             
             // Extract orderbook data
             std::vector<core::OrderBookLevel> bids, asks;
+            std::vector<std::pair<std::string, std::string>> bidPairs, askPairs;
             
             // Parse bids
             for (const auto& bid : json["bids"]) {
@@ -42,6 +47,7 @@ void OrderBookBridge::processMessage() {
                     std::stod(bid[0].get<std::string>()),
                     std::stod(bid[1].get<std::string>())
                 });
+                bidPairs.emplace_back(bid[0].get<std::string>(), bid[1].get<std::string>());
             }
             
             // Parse asks
@@ -50,10 +56,18 @@ void OrderBookBridge::processMessage() {
                     std::stod(ask[0].get<std::string>()),
                     std::stod(ask[1].get<std::string>())
                 });
+                askPairs.emplace_back(ask[0].get<std::string>(), ask[1].get<std::string>());
             }
             
-            // Emit signal with the parsed data
+            // Update orderbook with string pairs
+            orderBook_->update(json["exchange"], json["symbol"], bidPairs, askPairs, json["timestamp"].get<std::string>());
+            
+            // Run simulation
+            auto result = simulator_->simulate(orderBook_);
+            
+            // Emit signals with OrderBookLevel vectors
             emit orderBookUpdated(bids, asks);
+            emit simulationUpdated(result);
             
         } catch (const std::exception& e) {
             logger_.error("Error processing message: {}", e.what());
