@@ -108,7 +108,9 @@ void WebSocketClient::do_read() {
             }
 
             auto data = beast::buffers_to_string(buffer_.data());
-            processor_->enqueue(data);
+            processing::WebSocketMessage message; 
+            message.data = data;
+            processor_->enqueue(message);
             buffer_.consume(buffer_.size());
 
             // Continue reading

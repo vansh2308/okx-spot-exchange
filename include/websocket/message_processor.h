@@ -2,13 +2,15 @@
 #include <string>
 #include <thread>
 #include <atomic>
-#include <concurrentqueue.h>
+#include <concurrentqueue/concurrentqueue.h>
+#include "core/logger.h"
 
 namespace processing {
 
 struct WebSocketMessage {
     std::string data;
-    // Add other fields as needed (timestamp, type, etc.)
+    std::string timestamp;
+    // Add other fields as needed (type, etc.)
 };
 
 class MessageProcessor {
@@ -18,15 +20,18 @@ public:
 
     void start();
     void stop();
-    bool enqueue(const std::string& message);
+    bool enqueue(const WebSocketMessage& message);
     WebSocketMessage dequeue();
+    bool empty() const;
+    size_t size() const;
 
 private:
     void processMessages();
     
-    moodycamel::ConcurrentQueue<WebSocketMessage> queue_;
+    moodycamel::ConcurrentQueue<WebSocketMessage> messageQueue_;
     // std::thread processor_thread_;
     std::atomic<bool> running_{false};
+    core::Logger& logger_;
 };
 
 } // namespace processing

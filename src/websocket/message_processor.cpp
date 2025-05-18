@@ -1,10 +1,14 @@
 #include "websocket/message_processor.h"
 #include "core/logger.h"
 #include <iostream>
+#include <chrono>
+#include <thread>
 
 namespace processing {
 
-MessageProcessor::MessageProcessor() : queue_(100000) {} // Queue size of 100k messages
+MessageProcessor::MessageProcessor() : messageQueue_(100000), logger_(core::Logger::getInstance()) {
+    // Queue size of 100k messages
+}
 
 MessageProcessor::~MessageProcessor() {
     stop();
@@ -22,29 +26,32 @@ void MessageProcessor::stop() {
     // }
 }
 
-bool MessageProcessor::enqueue(const std::string& message) {
-    WebSocketMessage msg{message};
-    return queue_.try_enqueue(msg);
+bool MessageProcessor::enqueue(const WebSocketMessage& message) {
+    return messageQueue_.try_enqueue(message);
 }
 
 WebSocketMessage MessageProcessor::dequeue() {
     WebSocketMessage msg;
-    queue_.try_dequeue(msg);
+    messageQueue_.try_dequeue(msg);
     return msg;
-}   
+}
+
+bool MessageProcessor::empty() const {
+    return messageQueue_.size_approx() == 0;
+}
+
+size_t MessageProcessor::size() const {
+    return messageQueue_.size_approx();
+}
 
 void MessageProcessor::processMessages() {
-    WebSocketMessage msg;
     while (running_) {
-        if (queue_.try_dequeue(msg)) {
-            // Process the message here
-            core::Logger::getInstance().info("Processing message: {}", msg.data);
-            // Add your message processing logic here
-            // Example: Parse JSON, update market data, etc.
+        WebSocketMessage msg;
+        if (messageQueue_.try_dequeue(msg)) {
+            // Process message
+            logger_.info("Processing message: {}", msg.data);
         }
-
-        // Optional: Small sleep to prevent busy-waiting
-        // std::this_thread::sleep_for(std::chrono::microseconds(100));
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
 }
 
