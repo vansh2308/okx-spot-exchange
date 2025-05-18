@@ -2,7 +2,8 @@
 #pragma once
 
 #include <QAbstractTableModel>
-#include <QVector>
+#include <QColor>
+#include <vector>
 #include "core/orderbook.h"
 
 namespace ui {
@@ -19,11 +20,13 @@ public:
     QVariant data(const QModelIndex& index, int role = Qt::DisplayRole) const override;
     QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const override;
 
-public slots:
-    void updateData(const std::vector<core::OrderBookLevel>& newData);
+    // Custom methods
+    void updateData(const std::vector<core::OrderBookLevel>& levels);
+    void setIsBids(bool isBids) { isBids_ = isBids; }
 
 private:
-    std::vector<core::OrderBookLevel> data_;
+    std::vector<core::OrderBookLevel> levels_;
+    bool isBids_;
 };
 
 } // namespace ui

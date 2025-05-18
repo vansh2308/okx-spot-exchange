@@ -17,9 +17,19 @@ void View::setupUI() {
     // Create main layout
     mainLayout_ = new QVBoxLayout(this);
 
+    // Create top horizontal layout for input panel and simulation panel
+    auto* topLayout = new QHBoxLayout();
+    
     // Create input panel
     inputPanel_ = new InputPanel(this);
-    mainLayout_->addWidget(inputPanel_);
+    topLayout->addWidget(inputPanel_, 1);  // Input panel takes 1/2 of the space
+
+    // Create simulation panel
+    simulationPanel_ = new SimulationPanel(this);
+    topLayout->addWidget(simulationPanel_, 1);  // Simulation panel takes 1/2 of the space
+
+    // Add top layout to main layout
+    mainLayout_->addLayout(topLayout);
 
     // Create labels
     lastUpdateLabel_ = new QLabel("Last Update: -");
@@ -27,12 +37,15 @@ void View::setupUI() {
     mainLayout_->addWidget(lastUpdateLabel_);
     mainLayout_->addWidget(spreadLabel_);
 
-    // Create horizontal layout for order book and simulation panel
-    auto* horizontalLayout = new QHBoxLayout();
-
     // Create order book group
     auto* orderBookGroup = new QGroupBox("Order Book", this);
-    auto* orderBookLayout = new QVBoxLayout(orderBookGroup);
+    auto* orderBookLayout = new QHBoxLayout(orderBookGroup);  // Changed to horizontal layout
+
+    // Create bid and ask groups
+    auto* bidGroup = new QGroupBox("Bids", this);
+    auto* askGroup = new QGroupBox("Asks", this);
+    auto* bidLayout = new QVBoxLayout(bidGroup);
+    auto* askLayout = new QVBoxLayout(askGroup);
 
     // Create tables
     bidTable_ = new QTableView(this);
@@ -41,6 +54,10 @@ void View::setupUI() {
     // Create models
     bidModel_ = new ui::OrderBookTableModel(this);
     askModel_ = new ui::OrderBookTableModel(this);
+
+    // Set bid/ask flags
+    bidModel_->setIsBids(true);
+    askModel_->setIsBids(false);
 
     // Set models
     bidTable_->setModel(bidModel_);
@@ -59,19 +76,16 @@ void View::setupUI() {
     askTable_->setSelectionBehavior(QAbstractItemView::SelectRows);
     askTable_->setEditTriggers(QAbstractItemView::NoEditTriggers);
 
-    // Add tables to order book layout
-    orderBookLayout->addWidget(bidTable_);
-    orderBookLayout->addWidget(askTable_);
+    // Add tables to their respective layouts
+    bidLayout->addWidget(bidTable_);
+    askLayout->addWidget(askTable_);
 
-    // Create simulation panel
-    simulationPanel_ = new SimulationPanel(this);
+    // Add bid and ask groups to order book layout
+    orderBookLayout->addWidget(bidGroup, 1);  // Bids take 50% width
+    orderBookLayout->addWidget(askGroup, 1);  // Asks take 50% width
 
-    // Add widgets to horizontal layout
-    horizontalLayout->addWidget(orderBookGroup, 2);  // Order book takes 2/3 of the space
-    horizontalLayout->addWidget(simulationPanel_, 1);  // Simulation panel takes 1/3 of the space
-
-    // Add horizontal layout to main layout
-    mainLayout_->addLayout(horizontalLayout);
+    // Add order book group to main layout
+    mainLayout_->addWidget(orderBookGroup);
 
     setLayout(mainLayout_);
 }
