@@ -53,6 +53,7 @@
         "tuple": "cpp",
         "algorithm": "cpp",
         "condition_variable": "cpp",
-        "thread": "cpp"
+        "thread": "cpp",
+        "memory": "cpp"
     }
 }

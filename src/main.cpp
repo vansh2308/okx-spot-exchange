@@ -7,6 +7,7 @@
 #include <nlohmann/json.hpp>
 
 #include <QApplication>
+#include <QMainWindow>
 #include "ui/view.h"
 #include "ui/bridge.h"
 
@@ -46,52 +47,84 @@ int main(int argc, char* argv[]){
             return 1;
         }
 
-        // while (wsClient->isConnected()) {
-        //     processing::WebSocketMessage message = msgProcessor->dequeue();
-        //     if (!message.data.empty()) {
-        //         try {
-        //             // Parse JSON message
-        //             auto json = nlohmann::json::parse(message.data);
-                    
-        //             // Extract orderbook data
-        //             std::vector<std::pair<std::string, std::string>> bids, asks;
-                    
-        //             // Parse bids
-        //             for (const auto& bid : json["bids"]) {
-        //                 bids.emplace_back(bid[0].get<std::string>(), bid[1].get<std::string>());
-        //             }
-                    
-        //             // Parse asks
-        //             for (const auto& ask : json["asks"]) {
-        //                 asks.emplace_back(ask[0].get<std::string>(), ask[1].get<std::string>());
-        //             }
-                    
-        //             // Update orderbook
-        //             orderBook->update(json["exchange"], json["symbol"], bids, asks, json["timestamp"].get<std::string>());
-                    
-        //             // Run simulation
-        //             auto result = simulator->simulate(orderBook);
-                    
-        //             // Log results
-        //             logger.info("Simulation Results:");
-        //             logger.info("  Expected Slippage: {:.4f}%", result.expectedSlippage);
-        //             logger.info("  Expected Fees: ${:.4f}", result.expectedFees);
-        //             logger.info("  Expected Market Impact: {:.4f}%", result.expectedMarketImpact);
-        //             logger.info("  Net Cost: ${:.4f}", result.netCost);
-        //             logger.info("  Maker Ratio: {:.4f}", result.makerRatio);
-        //             logger.info("  Internal Latency: {:.2f}µs", result.internalLatency);
-                    
-        //         } catch (const std::exception& e) {
-        //             logger.error("Error processing message: {}", e.what());
-        //         }
-        //     }
-        //     std::this_thread::sleep_for(std::chrono::milliseconds(10));  // Small sleep to prevent busy-waiting
-        // }
-
         ui::View view;
         ui::Bridge bridge(msgProcessor, simulator);
         QObject::connect(&bridge, &ui::Bridge::orderBookUpdated, &view, &ui::View::updateOrderBook);
         QObject::connect(&bridge, &ui::Bridge::simulationUpdated, view.getSimulationPanel(), &ui::SimulationPanel::updateResults);
+
+        // Connect input panel signals
+        QObject::connect(view.getInputPanel(), &ui::InputPanel::exchangeChanged,
+                        [&](const QString& exchange) {
+                            // Update WebSocket connection
+                            logger.info("Exchange changed to: {}", exchange.toLatin1().data());
+                            
+                            // Disconnect from current exchange
+                            wsClient->disconnect();
+                            
+                            // Update WebSocket endpoint for new exchange
+                            std::string endpoint = config->getWebSocketEndpoint();
+                            config->setWebSocketEndpoint(endpoint);
+                            
+                            // Reconnect to new exchange
+                            if (!wsClient->connect()) {
+                                logger.error("Failed to connect to new exchange: {}", exchange.toLatin1().data());
+                                return;
+                            }
+                            
+                            // Send subscription message for current symbol
+                            QString currentSymbol = view.getInputPanel()->getSymbol();
+                            nlohmann::json subMsg = {
+                                {"op", "subscribe"},
+                                {"args", {currentSymbol.toStdString()}}
+                            };
+                            wsClient->send(subMsg.dump());
+                        });
+                        
+        QObject::connect(view.getInputPanel(), &ui::InputPanel::symbolChanged,
+                        [&](const QString& symbol) {
+                            // Update WebSocket subscription
+                            logger.info("Symbol changed to: {}", symbol.toLatin1().data());
+                            
+                            // Unsubscribe from current symbol
+                            QString currentSymbol = view.getInputPanel()->getSymbol();
+                            nlohmann::json unsubMsg = {
+                                {"op", "unsubscribe"},
+                                {"args", {currentSymbol.toStdString()}}
+                            };
+                            wsClient->send(unsubMsg.dump());
+                            
+                            // Subscribe to new symbol
+                            nlohmann::json subMsg = {
+                                {"op", "subscribe"},
+                                {"args", {symbol.toStdString()}}
+                            };
+                            wsClient->send(subMsg.dump());
+                            
+                            // Reset order book for new symbol
+                            orderBook = std::make_shared<core::OrderBook>();
+                        });
+                        
+        QObject::connect(view.getInputPanel(), &ui::InputPanel::parametersChanged,
+                        [&](const ui::InputPanel::Parameters& params) {
+                            // Update simulator parameters
+                            logger.info("Parameters updated - Symbol: {}, Exchange: {}, Order Type: {}, Quantity: {:.2f}, Volatility: {:.2f}%, Fee Tier: {}", 
+                                      params.symbol.toLatin1().data(),
+                                      params.exchange.toLatin1().data(),
+                                      params.orderType.toLatin1().data(),
+                                      params.quantity,
+                                      params.volatility,
+                                      params.feeTier.toLatin1().data());
+                            
+                            // Update simulator configuration
+                            simulator->setOrderType(params.orderType.toStdString());
+                            simulator->setQuantity(params.quantity);
+                            simulator->setVolatility(params.volatility);
+                            simulator->setFeeTier(params.feeTier.toStdString());
+                            
+                            // Run simulation with new parameters
+                            auto result = simulator->simulate(orderBook);
+                            view.getSimulationPanel()->updateResults(result);
+                        });
 
         view.resize(800, 600);
         view.show();

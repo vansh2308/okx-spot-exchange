@@ -5,6 +5,7 @@ set(UI_SOURCES
     view.cpp
     bridge.cpp
     simulation_panel.cpp
+    input_panel.cpp
 )
 
 set(UI_HEADERS
@@ -14,7 +15,7 @@ set(UI_HEADERS
     ${CMAKE_SOURCE_DIR}/include/ui/view.h
     ${CMAKE_SOURCE_DIR}/include/ui/bridge.h
     ${CMAKE_SOURCE_DIR}/include/ui/simulation_panel.h
-
+    ${CMAKE_SOURCE_DIR}/include/ui/input_panel.h
 )
 
 add_library(ui STATIC ${UI_SOURCES} ${UI_HEADERS})

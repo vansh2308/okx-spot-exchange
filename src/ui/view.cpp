@@ -17,6 +17,10 @@ void View::setupUI() {
     // Create main layout
     mainLayout_ = new QVBoxLayout(this);
 
+    // Create input panel
+    inputPanel_ = new InputPanel(this);
+    mainLayout_->addWidget(inputPanel_);
+
     // Create labels
     lastUpdateLabel_ = new QLabel("Last Update: -");
     spreadLabel_ = new QLabel("Spread: -");
