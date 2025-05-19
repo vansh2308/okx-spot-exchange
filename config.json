@@ -20,7 +20,7 @@
     ],
     "simulator": {
       "default_quantity_usd": 100,
-      "default_volatility": 0.3,
+      "default_volatility": 30,
       "default_fee_tier": "VIP 0",
       "default_exchange": "OKX",
       "default_asset": "BTC-USDT",

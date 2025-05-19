@@ -46,7 +46,7 @@ void InputPanel::setupUI() {
     // Volatility input
     volatilitySpin_ = new QDoubleSpinBox(this);
     volatilitySpin_->setRange(0.0, 100.0);
-    volatilitySpin_->setValue(0.3);
+    volatilitySpin_->setValue(30);
     volatilitySpin_->setSuffix("%");
     volatilitySpin_->setDecimals(2);
     formLayout->addRow("Volatility:", volatilitySpin_);
