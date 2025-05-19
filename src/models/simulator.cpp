@@ -204,7 +204,8 @@ void Simulator::startContinuousSimulation(const std::shared_ptr<core::OrderBook>
             
             while (continuousSimulationRunning_) {
                 // Run one simulation
-                simulate(orderBook);
+                auto result = simulate(orderBook);
+                
                 
                 // Sleep for update interval
                 int updateIntervalMs = config_ ? config_->getUpdateIntervalMs() : 1000;

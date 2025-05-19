@@ -50,59 +50,71 @@ int main(int argc, char* argv[]){
         ui::View view;
         ui::Bridge bridge(msgProcessor, simulator);
         QObject::connect(&bridge, &ui::Bridge::orderBookUpdated, &view, &ui::View::updateOrderBook);
-        QObject::connect(&bridge, &ui::Bridge::simulationUpdated, view.getSimulationPanel(), &ui::SimulationPanel::updateResults);
 
-        // Connect input panel signals
-        QObject::connect(view.getInputPanel(), &ui::InputPanel::exchangeChanged,
-                        [&](const QString& exchange) {
-                            // Update WebSocket connection
-                            logger.info("Exchange changed to: {}", exchange.toLatin1().data());
+        // QObject::connect(&bridge, &ui::Bridge::simulationUpdated, view.getSimulationPanel(), &ui::SimulationPanel::updateResults);
+
+        // Register simulator callback
+        simulator->registerResultCallback([&](const models::SimulationResult& result) {
+            view.getSimulationPanel()->updateResults(result);
+        });
+
+        // // Connect input panel signals
+        // QObject::connect(view.getInputPanel(), &ui::InputPanel::exchangeChanged,
+        //                 [&](const QString& exchange) {
+        //                     // Update WebSocket connection
+        //                     logger.info("Exchange changed to: {}", exchange.toLatin1().data());
                             
-                            // Disconnect from current exchange
-                            wsClient->disconnect();
+        //                     // Disconnect from current exchange
+        //                     wsClient->disconnect();
                             
-                            // Update WebSocket endpoint for new exchange
-                            std::string endpoint = config->getWebSocketEndpoint();
-                            config->setWebSocketEndpoint(endpoint);
+        //                     // Update WebSocket endpoint for new exchange
+        //                     std::string endpoint = config->getWebSocketEndpoint();
+        //                     config->setWebSocketEndpoint(endpoint);
                             
-                            // Reconnect to new exchange
-                            if (!wsClient->connect()) {
-                                logger.error("Failed to connect to new exchange: {}", exchange.toLatin1().data());
-                                return;
-                            }
+        //                     // Reconnect to new exchange
+        //                     if (!wsClient->connect()) {
+        //                         logger.error("Failed to connect to new exchange: {}", exchange.toLatin1().data());
+        //                         return;
+        //                     }
                             
-                            // Send subscription message for current symbol
-                            QString currentSymbol = view.getInputPanel()->getSymbol();
-                            nlohmann::json subMsg = {
-                                {"op", "subscribe"},
-                                {"args", {currentSymbol.toStdString()}}
-                            };
-                            wsClient->send(subMsg.dump());
-                        });
+        //                     // Send subscription message for current symbol
+        //                     QString currentSymbol = view.getInputPanel()->getSymbol();
+        //                     nlohmann::json subMsg = {
+        //                         {"op", "subscribe"},
+        //                         {"args", {currentSymbol.toStdString()}}
+        //                     };
+        //                     wsClient->send(subMsg.dump());
+        //                 });
                         
-        QObject::connect(view.getInputPanel(), &ui::InputPanel::symbolChanged,
-                        [&](const QString& symbol) {
-                            // Update WebSocket subscription
-                            logger.info("Symbol changed to: {}", symbol.toLatin1().data());
+        // QObject::connect(view.getInputPanel(), &ui::InputPanel::symbolChanged,
+        //                 [&](const QString& symbol) {
+        //                     // Update WebSocket subscription
+        //                     logger.info("Symbol changed to: {}", symbol.toLatin1().data());
                             
-                            // Unsubscribe from current symbol
-                            QString currentSymbol = view.getInputPanel()->getSymbol();
-                            nlohmann::json unsubMsg = {
-                                {"op", "unsubscribe"},
-                                {"args", {currentSymbol.toStdString()}}
-                            };
-                            wsClient->send(unsubMsg.dump());
+        //                     // Unsubscribe from current symbol
+        //                     QString currentSymbol = view.getInputPanel()->getSymbol();
+        //                     logger.info("Current symbol: {}", currentSymbol.toLatin1().data());
                             
-                            // Subscribe to new symbol
-                            nlohmann::json subMsg = {
-                                {"op", "subscribe"},
-                                {"args", {symbol.toStdString()}}
-                            };
-                            wsClient->send(subMsg.dump());
+        //                     nlohmann::json unsubMsg = {
+        //                         {"op", "unsubscribe"},
+        //                         {"args", {currentSymbol.toStdString()}}
+        //                     };
+        //                     wsClient->send(unsubMsg.dump());
                             
-                            // Reset order book for new symbol
-                            orderBook = std::make_shared<core::OrderBook>();
-                        });
+        //                     // Subscribe to new symbol
+        //                     nlohmann::json subMsg = {
+        //                         {"op", "subscribe"},
+        //                         {"args", {symbol.toStdString()}}
+        //                     };
+        //                     wsClient->send(subMsg.dump());
+                            
+        //                     // Reset order book for new symbol
+        //                     orderBook = std::make_shared<core::OrderBook>();
+                            
+        //                     // Restart continuous simulation with new order book
+        //                     simulator->stopContinuousSimulation();
+        //                     simulator->startContinuousSimulation(orderBook);
+        //                 });
                         
         QObject::connect(view.getInputPanel(), &ui::InputPanel::parametersChanged,
                         [&](const ui::InputPanel::Parameters& params) {
@@ -115,16 +127,39 @@ int main(int argc, char* argv[]){
                                       params.volatility,
                                       params.feeTier.toLatin1().data());
                             
+                            std::string newSymbol = params.symbol.toLatin1().data();
+                            std::string newEndpoint = "wss://ws.gomarket-cpp.goquant.io/ws/l2-orderbook/okx/" + newSymbol.substr(0, newSymbol.find('/')) + "-USDT-SWAP";
+
+                            config->setWebSocketEndpoint(newEndpoint);
+
+                            // Reconnect to new exchange
+                            wsClient = std::make_shared<websocket::WebSocketClient>(config, msgProcessor);
+
+                            if (!wsClient->connect()) {
+                                logger.error("Failed to connect to new symbol: {}", newSymbol.c_str());
+                                return;
+                            }
+
                             // Update simulator configuration
                             simulator->setOrderType(params.orderType.toStdString());
                             simulator->setQuantity(params.quantity);
                             simulator->setVolatility(params.volatility);
                             simulator->setFeeTier(params.feeTier.toStdString());
                             
-                            // Run simulation with new parameters
+                            // Force a simulation update
                             auto result = simulator->simulate(orderBook);
                             view.getSimulationPanel()->updateResults(result);
                         });
+
+        // Initial simulation with default parameters
+        auto initialParams = view.getInputPanel()->getParameters();
+        simulator->setOrderType(initialParams.orderType.toStdString());
+        simulator->setQuantity(initialParams.quantity);
+        simulator->setVolatility(initialParams.volatility);
+        simulator->setFeeTier(initialParams.feeTier.toStdString());
+        
+        // Start continuous simulation
+        simulator->startContinuousSimulation(orderBook);
 
         view.resize(800, 600);
         view.show();
