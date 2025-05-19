@@ -8,6 +8,8 @@ find_package(Qt6 COMPONENTS Core Widgets Test REQUIRED)
 set(TEST_SOURCES
     bridge_test.cpp
     input_panel_test.cpp
+    websocket_test.cpp
+    models_test.cpp
 )
 
 add_executable(run_tests ${TEST_SOURCES})

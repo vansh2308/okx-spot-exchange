@@ -5,6 +5,7 @@ set(MODELS_SOURCES
     maker_taker_model.cpp
     almgren_chriss.cpp
     fee_model.cpp
+    regression_model.cpp
 )
 
 # Create library
