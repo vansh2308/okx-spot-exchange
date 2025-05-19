@@ -1,30 +1,28 @@
+# Set source files
 set(MODELS_SOURCES
-    almgren_chriss.cpp
-    slippage_model.cpp
-    fee_model.cpp
-    maker_taker_model.cpp
-    regression_model.cpp
     simulator.cpp
+    slippage_model.cpp
+    maker_taker_model.cpp
+    almgren_chriss.cpp
+    fee_model.cpp
 )
 
-set(MODELS_HEADERS
-    ${CMAKE_SOURCE_DIR}/include/models/almgren_chriss.h
-    ${CMAKE_SOURCE_DIR}/include/models/slippage_model.h
-    ${CMAKE_SOURCE_DIR}/include/models/fee_model.h
-    ${CMAKE_SOURCE_DIR}/include/models/maker_taker_model.h
-    ${CMAKE_SOURCE_DIR}/include/models/regression_model.h
-    ${CMAKE_SOURCE_DIR}/include/models/simulator.h
-)
+# Create library
+add_library(models STATIC ${MODELS_SOURCES})
 
-add_library(models STATIC ${MODELS_SOURCES} ${MODELS_HEADERS})
-
+# Set include directories
 target_include_directories(models
     PUBLIC
-    ${CMAKE_SOURCE_DIR}/include
+        ${CMAKE_SOURCE_DIR}/include
+    PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
+# Link dependencies
 target_link_libraries(models
     PUBLIC
-    core
-    # Qt5::Core
+        core
+        nlohmann_json::nlohmann_json
+        spdlog::spdlog
+        ${Boost_LIBRARIES}
 ) 

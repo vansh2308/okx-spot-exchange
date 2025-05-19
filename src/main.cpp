@@ -20,12 +20,13 @@
 
 int main(int argc, char* argv[]){
     try {
+
         QApplication app(argc, argv);
 
         core::Logger::getInstance().init();
         auto& logger = core::Logger::getInstance();
 
-        logger.info("Starting Crypto Exchange Trade Simulator... Hare Krishna");
+        logger.info("Starting Crypto Exchange Trade Simulator...");
 
         // Load configuration
         auto config = std::make_shared<core::Config>();
