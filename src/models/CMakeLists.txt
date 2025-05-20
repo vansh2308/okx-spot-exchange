@@ -15,6 +15,7 @@ add_library(models STATIC ${MODELS_SOURCES})
 target_include_directories(models
     PUBLIC
         ${CMAKE_SOURCE_DIR}/include
+        ${CMAKE_SOURCE_DIR}/third_party/eigen
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}
 )

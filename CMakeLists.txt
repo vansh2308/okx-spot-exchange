@@ -19,6 +19,10 @@ find_package(nlohmann_json REQUIRED)
 find_package(spdlog REQUIRED)
 find_package(Boost REQUIRED COMPONENTS system)
 
+# Set Eigen include path
+set(EIGEN3_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/third_party/eigen")
+include_directories(${EIGEN3_INCLUDE_DIR})
+
 # Add subdirectories
 add_subdirectory(src)
 add_subdirectory(tests)
@@ -29,6 +33,7 @@ include_directories(
     ${OPENSSL_INCLUDE_DIR}
     ${GTEST_INCLUDE_DIRS}
     ${Boost_INCLUDE_DIRS}
+    ${EIGEN3_INCLUDE_DIR}
 )
 
 # Add executable
