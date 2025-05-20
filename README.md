@@ -34,6 +34,7 @@ This project is a cryptocurrency exchange simulator that provides real-time orde
 - **nlohmann_json**: JSON parsing and handling
 - **spdlog**: Logging system
 - **GTest**: Unit testing framework
+- **Eigen3**: Statistical methods for Models
 
 ### Development Tools
 - **CMake**: Build system
